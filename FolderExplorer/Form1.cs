@@ -28,9 +28,13 @@ namespace FolderExplorer
             {
                 if (fbd.ShowDialog() == DialogResult.OK)
                 {
+                    
                     foreach (string item in Directory.GetFiles(fbd.SelectedPath))
                     {
-                        
+                        imageList1.Images.Add(System.Drawing.Icon.ExtractAssociatedIcon(item));
+                        FileInfo fi = new FileInfo(item);
+                        listFiles.Add(fi.FullName);
+                        listView1.Items.Add(fi.Name, imageList1.Images.Count - 1);
                     }
                 }
             }    
