@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -13,16 +14,18 @@ namespace FolderExplorer
 {
     public partial class Form1 : Form
     {
-        List<ListViewItem> listFiles = new List<ListViewItem>();
-        
+        private int sortColumn = -1;
+                
         public Form1()
         {
             InitializeComponent();
+            this.listView1.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.listView1_ColumnClick);
+            button1.Click += new EventHandler(this.button1_Click);
+            checkBox1.Click += new EventHandler(this.checkBox1_CheckedChanged);
         }
                                  
         private void button1_Click(object sender, EventArgs e)
         {
-            listFiles.Clear();
             listView1.Items.Clear();
             ListViewItem.ListViewSubItem[] subItems;
             ListViewItem item = null;
@@ -58,14 +61,88 @@ namespace FolderExplorer
                         listView1.Items.Add(item);
                     }
                     listView1.AutoResizeColumns(ColumnHeaderAutoResizeStyle.HeaderSize);
+                                       
                 }
             }
         }
 
-        private void listView1_SelectedIndexChanged(object sender, EventArgs e)
+        private void listView1_ColumnClick(object sender, System.Windows.Forms.ColumnClickEventArgs e)
         {
+            if (e.Column != sortColumn)
+            {
+                sortColumn = e.Column;
+                listView1.Sorting = SortOrder.Ascending;
+            }
+            else
+            {
+                if (listView1.Sorting == SortOrder.Ascending)
+                    listView1.Sorting = SortOrder.Descending;
+                else
+                    listView1.Sorting = SortOrder.Ascending;
+            }
+            listView1.Sort();
+            this.listView1.ListViewItemSorter = new ListViewItemComparer(e.Column, listView1.Sorting);
 
         }
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            FileAttributes attributes = File.GetAttributes(txtPath.Text);
+
+            if (checkBox1.Checked == true)
+            {
+                if ((attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
+                {
+                    attributes = RemoveAttribute(attributes, FileAttributes.Hidden);
+                    File.SetAttributes(txtPath.Text, attributes);
+                }
+                else
+                {
+                    File.SetAttributes(txtPath.Text, File.GetAttributes(txtPath.Text) | FileAttributes.Hidden);
+                }
+            }
+        }
+
+        private static FileAttributes RemoveAttribute(FileAttributes attributes, FileAttributes attributesToRemove)
+        {
+            return attributes & ~attributesToRemove;
+        }
     }
-       
+
+    class ListViewItemComparer : IComparer
+    {
+        private int column;
+        private SortOrder order;
+        
+        public ListViewItemComparer()
+        {
+            column = 0;
+            order = SortOrder.Ascending;
+        }
+
+        public ListViewItemComparer(int column, SortOrder order)
+        {
+            this.column = column;
+            this.order = order;
+        }
+
+        public int Compare(object x, object y)
+        {
+            int returnVal;
+            try
+            {
+                System.DateTime firstDate = DateTime.Parse(((ListViewItem)x).SubItems[column].Text);
+                System.DateTime secondDate = DateTime.Parse(((ListViewItem)y).SubItems[column].Text);
+                returnVal = DateTime.Compare(firstDate, secondDate);
+            }
+            catch
+            {
+                returnVal = String.Compare(((ListViewItem)x).SubItems[column].Text,
+                                          ((ListViewItem)y).SubItems[column].Text);
+            }
+            if (order == SortOrder.Descending)
+                returnVal *= -1;
+            return returnVal;
+        }
+    }
 }
