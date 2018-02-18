@@ -13,90 +13,59 @@ namespace FolderExplorer
 {
     public partial class Form1 : Form
     {
-        List<string> listFiles = new List<string>();
-
+        List<ListViewItem> listFiles = new List<ListViewItem>();
+        
         public Form1()
         {
             InitializeComponent();
-            PopulateTreeView();
-            this.treeView1.NodeMouseClick += new TreeNodeMouseClickEventHandler(this.TreeView1_NodeMouseClick);
         }
-
-        void TreeView1_NodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
+                                 
+        private void button1_Click(object sender, EventArgs e)
         {
-            TreeNode newSelected = e.Node;
+            listFiles.Clear();
             listView1.Items.Clear();
-            DirectoryInfo nodeDirInfo = (DirectoryInfo)newSelected.Tag;
             ListViewItem.ListViewSubItem[] subItems;
             ListViewItem item = null;
-
-            foreach (DirectoryInfo dir in nodeDirInfo.GetDirectories())
+                        
+            using(FolderBrowserDialog fbd = new FolderBrowserDialog() { Description="Select your path." })
             {
-                item = new ListViewItem(dir.Name, 0);
-                subItems = new ListViewItem.ListViewSubItem[]
+                if (fbd.ShowDialog() == DialogResult.OK)
                 {
-                    new ListViewItem.ListViewSubItem(item, ""),
-                    new ListViewItem.ListViewSubItem(item, dir.LastAccessTime.ToShortDateString())
-                };
-                item.SubItems.AddRange(subItems);
-                listView1.Items.Add(item);
-            }
-            foreach (FileInfo file in nodeDirInfo.GetFiles())
-            {
-                item = new ListViewItem(file.Name, 1);
-                subItems = new ListViewItem.ListViewSubItem[]
-                {
-                    new ListViewItem.ListViewSubItem(item, file.Length.ToString()),
-                    new ListViewItem.ListViewSubItem(item, file.LastAccessTime.ToShortDateString())
-                };
-                item.SubItems.AddRange(subItems);
-                listView1.Items.Add(item);
-            }
-            listView1.AutoResizeColumns(ColumnHeaderAutoResizeStyle.HeaderSize);
-        }
+                    txtPath.Text = fbd.SelectedPath;
+                    foreach(string file in Directory.GetFiles(fbd.SelectedPath))
+                    {
+                        FileInfo fi = new FileInfo(file);
+                        item = new ListViewItem(fi.Name, 1);
+                        subItems = new ListViewItem.ListViewSubItem[]
+                        {
+                            new ListViewItem.ListViewSubItem(item, file.Length.ToString()),
+                            new ListViewItem.ListViewSubItem(item, fi.LastAccessTime.ToShortDateString() + "/" + fi.LastAccessTime.ToShortTimeString())
+                        };
+                        item.SubItems.AddRange(subItems);
+                        listView1.Items.Add(item);
+                    }
 
-           
-        private void PopulateTreeView()
-        {
-            TreeNode rootNode;
-
-            DirectoryInfo info = new DirectoryInfo(@"../..");
-
-            if (info.Exists)
-            {
-                rootNode = new TreeNode(info.Name)
-                {
-                    Tag = info
-                };
-                GetDirectories(info.GetDirectories(), rootNode);
-                treeView1.Nodes.Add(rootNode);
-            }
-        }
-
-        private void GetDirectories(DirectoryInfo[] subdirs, TreeNode nodetoAddTo)
-        {
-            TreeNode aNode;
-            DirectoryInfo[] subSubDirs;
-            foreach (DirectoryInfo subDir in subdirs)
-            {
-                aNode = new TreeNode(subDir.Name, 0, 0)
-                {
-                    Tag = subDir,
-                    ImageKey = "folder"
-                };
-                subSubDirs = subDir.GetDirectories();
-                if (subSubDirs.Length != 0)
-                {
-                    GetDirectories(subSubDirs, aNode);
+                    foreach(string directory in Directory.GetDirectories(fbd.SelectedPath))
+                    {
+                        DirectoryInfo di = new DirectoryInfo(directory);
+                        item = new ListViewItem(di.Name, 0);
+                        subItems = new ListViewItem.ListViewSubItem[]
+                        {
+                            new ListViewItem.ListViewSubItem(item, ""),
+                            new ListViewItem.ListViewSubItem(item, di.LastAccessTime.ToShortDateString() + "/" + di.LastAccessTime.ToShortTimeString())
+                        };
+                        item.SubItems.AddRange(subItems);
+                        listView1.Items.Add(item);
+                    }
+                    listView1.AutoResizeColumns(ColumnHeaderAutoResizeStyle.HeaderSize);
                 }
-                nodetoAddTo.Nodes.Add(aNode);
             }
-
         }
 
-        private void Button1_Click(object sender, EventArgs e)
+        private void listView1_SelectedIndexChanged(object sender, EventArgs e)
         {
-          
+
         }
     }
+       
 }
